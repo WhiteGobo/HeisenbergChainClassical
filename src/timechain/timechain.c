@@ -329,7 +329,7 @@ void plotmodecycle_chain(struct spinchain *chain)
 	float *spin = chain->spins + 2;
 	for (r=0; r< chain->size; r++)
 	{
-		qmode= qmode + cosf((float)(r%(chain->qnumber) / chain->qnumber))* (*spin);
+		qmode= qmode + cosf((float)(2*pi*r%(chain->qnumber) / chain->qnumber))* (*spin);
 		spin= spin+3;
 	}
 	cycle_plotter(chain->plotter, &(chain->time), &(qmode));
@@ -362,7 +362,7 @@ void printforce_chain(struct spinchain *chain)
 
 
 /* Create a 3dim spin chain with randomdata:
- * TODO: remove alhpa before forschleife, work on A
+ * TODO: remove alpha before forschleife, work on A
  *       work on printfs
  */
 struct spinchain *create_spinchain(int size, float timestep, float J, float Delta, int qnumber, int *id, float zcouplingmax)
@@ -476,6 +476,31 @@ void free_spinchain(struct spinchain *chain)
 
 
 
+
+/* Calculate timederivation 
+ * x = S^x_r     y = S^y_r     z = S^z_r
+ * x2= S^x_r-1   y2= S^y_r-1
+ * x3= S^x_r+1   
+ */
+float timedex(float y, float z, float y2, float z2, float y3, float z3, float J, float Delta, float zcoupling)
+{
+	return J * (        z * ( y2 + y3)  -  Delta * y * (z2 + z3) + y * zcoupling);
+} 
+
+
+float timedey(float x, float z, float x2, float z2, float x3, float z3, float J, float Delta, float zcoupling)
+{
+	return J * ( Delta * x * (z2 + z3) -            z * (x2 + x3) - x * zcoupling );
+}
+
+
+float timedez(float x, float y, float x2, float y2, float x3, float y3, float J, float Delta)
+{
+	return J * (         y * (x2 + x3)   -          x * (y2 + y3) );
+}
+
+
+
 /* To start we need a Anfangsverteilung
  * We need 3 random numbers A, a, alpha and momentum of the system
  * cos alpha * sqrt(1-A^2cos^2(qr) a^2)
@@ -498,25 +523,3 @@ float beginningz(float cosqr, float  a, float  alpha, float A, int r)
 }
 
 
-
-
-/* To start we need a Anfangsverteilung
- * We need 3 random numbers A, a, alpha and momentum of the system
- * cos alpha * sqrt(1-A^2cos^2(qr) a^2)
- */
-float beginningx(float q, float  a, float  alpha, float A, int r)
-{
-	return cos(alpha) * sqrtf(1 - powf(beginningz( q, a, alpha, A, r),2.0f));
-}
-
-
-float beginningy(float q, float  a, float  alpha, float A, int r)
-{
-	return sin(alpha) * sqrtf(1 - powf(beginningz( q, a, alpha, A, r),2.0f));
-}
-
-
-float beginningz(float q, float  a, float  alpha, float A, int r)
-{
-	return  A * cos(q*r) * a;
-}
