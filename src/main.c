@@ -43,7 +43,6 @@ void *calculate_spinchain(void *id)
 {
 	int i;
 	struct spinchain *chain;
-	printf("halo: %f\n", timestep);
 	chain = (struct spinchain *)create_spinchain2(size, timestep, J, Delta, qnumber, (int*)id, zcouplingmax);
 	if(chain != NULL){
 		//print_chain(chain);
