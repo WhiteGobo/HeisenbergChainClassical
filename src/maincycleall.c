@@ -4,6 +4,7 @@
 #include <pthread.h>
 #include <sys/resource.h>
 #include <errno.h>
+#include "timechain/timechain.h"
 
 static float pi = 3.141592653;
 
@@ -14,12 +15,12 @@ float J = -1.0;
 float Delta = 1.5;
 int timemax;
 int k = 1000;
-int MaxId = 2;
+int MaxId = 1000;
 float zcouplingmax = 0.0;
 float q;
 int runningThreads = 0;
 pthread_mutex_t lock_runningThreads;
-int max_Threads = 4;
+int max_Threads = 10;
 int waitingtime = 10;
 
 /* Read data of the Heisenbergchain
@@ -46,12 +47,12 @@ void *calculate_spinchain(void *id)
 		//printmode_chain(chain, &q);
 		//printforce_chain(chain);
 		//plot_chain(chain);
-		//plotmode_chain(chain, &q);
+		plotmode_chain(chain, q);
 		for (i=0; i< timemax; i++){
-			//progress_rk(chain);
+			progress_rk(chain);
 			//printmode_chain(chain, &q);
 			//progress_eul(chain);
-			//if(i%100 == 0) plotmodecycle_chain(chain);
+			if(i%100 == 0) plotmodecycle_chain(chain);
 			//if(i%10 == 0) printforce_chain(chain);
 			//if(i%3000 == 0) plot_chain(chain);
 		}
@@ -59,7 +60,7 @@ void *calculate_spinchain(void *id)
 		//printmode_chain(chain, &q);
 		//printforce_chain(chain);
 		//plot_chain(chain);
-		//plotmodeend_chain(chain);
+		plotmodeend_chain(chain);
 		free_spinchain(chain);
 	}
 	pthread_mutex_lock(&lock_runningThreads);
@@ -103,7 +104,6 @@ int main (int argc, char **argv)
 {
 	int i;
 	int id[MaxId];
-	float q;
 
 	//request_data();
 

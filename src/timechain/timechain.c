@@ -1,6 +1,8 @@
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "../reader/reader.h"
+#include "../plotter/plotter.h"
 
 struct spinchain {
 	float *spins;
@@ -15,13 +17,14 @@ struct spinchain {
 	struct inhalt *plotter;
 	float qanalysis;
 	float q;
+	float max_randomzcoupling;
 };
 
 void progress_rk(struct spinchain *chain);
 void progress_eul(struct spinchain *chain);
 void print_chain(struct spinchain *chain);
 void printmode_chain(struct spinchain *chain, float *q);
-void plotmodebegin_chain(struct spinchain *chain, float *q);
+void plotmodebegin_chain(struct spinchain *chain, float q);
 void printforce_chain(struct spinchain *chain);
 struct spinchain *create_spinchain(int size, float timestep, float J, float Delta, float q, int *id, float zcouplingmax);
 void free_spinchain(struct spinchain *chain);
@@ -31,12 +34,13 @@ float beginningz(float q, float  a, float  alpha, float A, int r);
 float timedex(float y, float z, float y2, float z2, float y3, float z3, float J, float Delta, float zcoupling);
 float timedey(float x, float z, float x2, float z2, float x3, float z3, float J, float Delta, float zcoupling);
 float timedez(float x, float y, float x2, float y2, float x3, float y3, float J, float Delta);
-void plotmode_chain(struct spinchain *chain, float *qanalysis);
+void plotmode_chain(struct spinchain *chain, float qanalysis);
 void plotmodecycle_chain(struct spinchain *chain);
 void plotmodeend_chain(struct spinchain *chain);
 
 
-/* One step further with Runge-Kutta of S_r
+/*
+ *One step further with Runge-Kutta of S_r
  * timede = Dt S_r = J^r_- - J^r_+
  * J^r_+- = +- J S_r x (s^x_r-1 , s^y_r-1, Delta s^z_r-1)  + J h_r x S_r
  * x = S^x_r     y = S^y_r     z = S^z_r
@@ -171,7 +175,8 @@ void progress_rk(struct spinchain *chain)
 
 
 
-/* One step further with Euler of S_r
+/*
+ * One step further with Euler of S_r
  * timede = Dt S_r = J^r_- - J^r_+
  * J^r_+- = +- J S_r x (s^x_r-1 , s^y_r-1, Delta s^z_r-1)  + J h_r x S_r
  * x = S^x_r     y = S^y_r     z = S^z_r
@@ -297,18 +302,18 @@ void printmode_chain(struct spinchain *chain, float *q)
 /* create a plotter device for continuus plotting
  * uses plotmodecycle and plotmodeend
  */
-void plotmode_chain(struct spinchain *chain, float *qanalysis)
+void plotmode_chain(struct spinchain *chain, float qanalysis)
 {
 	struct inhalt *data;
 	char name[255];
-	sprintf(name, "output/heismode%.3f_%03d_%.3f_%.2f.dat", *qanalysis, chain->id, chain->q, chain->Delta);
+	sprintf(name, "output/heismode%.3f_%03d_%.3f_%.2f.dat", qanalysis, chain->id, chain->q, chain->Delta);
 	//printf(name);
 	//printf("\n");
 	char headerstring[255];
-	sprintf(headerstring,"# id:                 %d\n# size:               %d\n# coupling constant:  %E\n# inhomogenity Delta: %E\n", chain->id, chain->size, chain->J, chain->Delta);
+	sprintf(headerstring,"# id:                      %d\n# size:                    %d\n# coupling constant:       %E\n# inhomogenity Delta:      %E\n# maximum randomzcoupling: ", chain->id, chain->size, chain->J, chain->Delta, chain->max_randomzcoupling);
 	data = (struct inhalt *)init_plotter(name, headerstring);
 	chain->plotter = data;
-	chain->qanalysis = *qanalysis;
+	chain->qanalysis = qanalysis;
 	//print_main(data, name, string);
 	//close_inhalt(data);
 }
@@ -357,15 +362,15 @@ void printforce_chain(struct spinchain *chain)
  */
 struct spinchain *create_spinchain(int size, float timestep, float J, float Delta, float q, int *id, float zcouplingmax)
 {
-	float a, A, alpha;
+	float a, A, alpha, singlerandomnumber;
 	int r;
 	struct spinchain *chain = malloc(sizeof(struct spinchain));
 	char name[30];
+	int *allrandomnumber;
 	
 	chain->size = size;
 	if(alloc_spinchain(chain) != 0) return NULL;
 
-	int *allrandomnumber;
 	allrandomnumber = calloc(5+ (3* size), sizeof(int));
 	if(allrandomnumber == NULL){
 		fputs("allokieren von allrandomnumber\n", stderr);
@@ -376,8 +381,14 @@ struct spinchain *create_spinchain(int size, float timestep, float J, float Delt
 		return NULL;
 	}
 	sprintf(name, "data/random%03d.dat", *id);
-	if(intsofsize(name,3, 5+(3* size), allrandomnumber)<0) return NULL;
-	float singlerandomnumber;
+	if(intsofsize(name,3, 5+(3* size), allrandomnumber)<0){
+		free(chain->spins);
+		free(chain->spinssecond);
+		free(chain->randomzcoupling);
+		free(chain);
+		free(allrandomnumber);
+		return NULL;
+	}
 
 	//singlerandomnumber = 0.001 * (float)*(allrandomnumber );
 	//float alpha=singlerandomnumber*2*3.141592653;	
@@ -405,6 +416,7 @@ struct spinchain *create_spinchain(int size, float timestep, float J, float Delt
 	chain->time = 0.0;
 	chain->q = q;
 	chain->id = *id;
+	chain->max_randomzcoupling = zcouplingmax;
 
 	printf("hier kommt size  %d \n", size);
 	printf("hier kommt q     %f \n", q);
@@ -430,16 +442,16 @@ int alloc_spinchain(struct spinchain *chain)
 	chain->spinssecond = calloc(3* chain->size,64);
 	if(chain->spinssecond == NULL){
 		fputs("allokieren von spinssecond", stderr);
-		free(chain);
 		free(chain->spins);
+		free(chain);
 		return -2;
 	}
 	chain->randomzcoupling = calloc(chain->size,64);
 	if(chain->randomzcoupling == NULL){
 		fputs("allokieren von randomzcoupling\n", stderr);
-		free(chain);
 		free(chain->spins);
 		free(chain->spinssecond);
+		free(chain);
 		return -3;
 	}
 	return 0;
