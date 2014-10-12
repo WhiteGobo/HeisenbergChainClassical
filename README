@@ -1,0 +1,17 @@
+Output:
+For analysis of the q mode:
+	heismode.a.b.c.d.dat
+		a: q which was analyzed ( q = SUM cos(q) * S_z
+		b: id number for random data
+		c: q at start
+		d: Anisotropy Delta
+Input.dat:
+	size: Groesze Systems
+	timestep: groesze der Zeitschritte zwischen zwei berechnungen
+	Delta: Inhomogenitaet der Kette
+	J: Staerke der Wechselwirkung
+	time: Laenge der Simulation
+	K: Anzahl der Wellen innerhalb der ganzen Kette
+
+Informationen ueber Simulation
+	Es werden wellenzahlen von pi/90, pi/18, pi/9 und 2pi/9 verwendet
