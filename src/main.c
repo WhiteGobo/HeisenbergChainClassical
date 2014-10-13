@@ -67,7 +67,7 @@ int main (int argc, char **argv)
 	//q = 2 * pi * k / size;
 
 	struct spinchain *chain;
-	chain = (struct spinchain *)create_spinchain(&size, &timestep, &J, &Delta, &q, &id);
+	chain = (struct spinchain *)create_spinchain(&size, &timestep, &J, &Delta, &q, &id, 0.0);
 	//print_chain(chain);
 	//printmode_chain(chain, &q);
 	//printforce_chain(chain);

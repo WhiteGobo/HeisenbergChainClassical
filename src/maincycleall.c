@@ -12,6 +12,7 @@ float Delta = 1.5;
 int time, id;
 int k = 1000;
 int MaxId = 200;
+float zcouplingmax = 0.0;
 
 /* Read data of the Heisenbergchain
  */
@@ -23,6 +24,7 @@ void request_data (void)
 	scanf("%f", &J);
 	scanf("%d", &time);
 	scanf("%d", &k);
+	scanf("%f", &zcouplingmax);
 }
 
 
@@ -45,7 +47,7 @@ int main (int argc, char **argv)
 	id = 0;
 	while(id < MaxId)
 	{
-		chain = (struct spinchain *)create_spinchain(&size, &timestep, &J, &Delta, &q, &id);
+		chain = (struct spinchain *)create_spinchain(&size, &timestep, &J, &Delta, &q, &id, zcouplingmax);
 		//print_chain(chain);
 		//printmode_chain(chain, &q);
 		//printforce_chain(chain);

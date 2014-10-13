@@ -12,6 +12,7 @@ Input.dat:
 	J: Staerke der Wechselwirkung
 	time: Laenge der Simulation
 	K: Anzahl der Wellen innerhalb der ganzen Kette
+	zcouplingmax: Maximale Stärke der zufälligen Wechselwirkung mit jedem Spinzkomponente
 
 Informationen ueber Simulation
 	Es werden wellenzahlen von pi/90, pi/18, pi/9 und 2pi/9 verwendet

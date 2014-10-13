@@ -5,6 +5,7 @@
 struct spinchain {
 	float *spins;
 	float *spinssecond;
+	float *randomzcoupling;
 	int size;
 	float timestep;
 	float time;
@@ -22,13 +23,13 @@ void print_chain(struct spinchain *chain);
 void printmode_chain(struct spinchain *chain, float *q);
 void plotmodebegin_chain(struct spinchain *chain, float *q);
 void printforce_chain(struct spinchain *chain);
-struct spinchain *create_spinchain(int *size, float *timestep, float *J, float *Delta, float *q, int *id);
+struct spinchain *create_spinchain(int *size, float *timestep, float *J, float *Delta, float *q, int *id, float zcouplingmax);
 void free_spinchain(struct spinchain *chain);
 float beginningx(float q, float  a, float  alpha, float A, int r);
 float beginningy(float q, float  a, float  alpha, float A, int r);
 float beginningz(float q, float  a, float  alpha, float A, int r);
-float timedex(float y, float z, float y2, float z2, float y3, float z3, float J, float Delta);
-float timedey(float x, float z, float x2, float z2, float x3, float z3, float J, float Delta);
+float timedex(float y, float z, float y2, float z2, float y3, float z3, float J, float Delta, float zcoupling);
+float timedey(float x, float z, float x2, float z2, float x3, float z3, float J, float Delta, float zcoupling);
 float timedez(float x, float y, float x2, float y2, float x3, float y3, float J, float Delta);
 void plotmode_chain(struct spinchain *chain, float *qanalysis);
 void plotmodecycle_chain(struct spinchain *chain);
@@ -37,7 +38,7 @@ void plotmodeend_chain(struct spinchain *chain);
 
 /* One step further with Runge-Kutta of S_r
  * timede = Dt S_r = J^r_- - J^r_+
- * J^r_+- = +- J S_r x (s^x_r-1 , s^y_r-1, Delta s^z_r-1)
+ * J^r_+- = +- J S_r x (s^x_r-1 , s^y_r-1, Delta s^z_r-1)  + J h_r x S_r
  * x = S^x_r     y = S^y_r     z = S^z_r
  * x2= S^x_r-1   y2= S^y_r-1
  * x3= S^x_r+1   
@@ -47,7 +48,7 @@ void progress_rk(struct spinchain *chain)
 	int i;
 	float sigma[9];
 	float erg[chain->size * 3];
-	float x,y,z,xm,ym,zm,xp,yp,zp,J,Delta, h;
+	float x,y,z,xm,ym,zm,xp,yp,zp,J,Delta, h, zcoupling;
 	float spinlaenge;
 
 	J=chain->J;
@@ -65,29 +66,27 @@ void progress_rk(struct spinchain *chain)
 		xp=*(chain->spins+i*3+3);
 		yp=*(chain->spins+i*3+4);
 		zp=*(chain->spins+i*3+5);
+		zcoupling=*(chain->randomzcoupling+i);
 
-		sigma[0] = timedex(y,z,ym,zm,yp,zp,J,Delta);
-		sigma[1] = timedey(x,z,xm,zm,xp,zp,J,Delta);
+		sigma[0] = timedex(y,z,ym,zm,yp,zp,J,Delta,zcoupling);
+		sigma[1] = timedey(x,z,xm,zm,xp,zp,J,Delta,zcoupling);
 		sigma[2] = timedez(x,y,xm,ym,xp,yp,J,Delta);
 		x=x + 0.5*h*sigma[0];
 		y=y + 0.5*h*sigma[1];
 		z=z + 0.5*h*sigma[2];
-		sigma[3] = timedex(y,z,ym,zm,yp,zp,J,Delta);
-		sigma[4] = timedey(x,z,xm,zm,xp,zp,J,Delta);
+		sigma[3] = timedex(y,z,ym,zm,yp,zp,J,Delta,zcoupling);
+		sigma[4] = timedey(x,z,xm,zm,xp,zp,J,Delta,zcoupling);
 		sigma[5] = timedez(x,y,xm,ym,xp,yp,J,Delta);
 		x=x - 1.5*h*sigma[0] + 2*h*sigma[3];
 		y=y - 1.5*h*sigma[1] + 2*h*sigma[4];
 		z=z - 1.5*h*sigma[2] + 2*h*sigma[5];
-		sigma[6] = timedex(y,z,ym,zm,yp,zp,J,Delta);
-		sigma[7] = timedey(x,z,xm,zm,xp,zp,J,Delta);
+		sigma[6] = timedex(y,z,ym,zm,yp,zp,J,Delta,zcoupling);
+		sigma[7] = timedey(x,z,xm,zm,xp,zp,J,Delta,zcoupling);
 		sigma[8] = timedez(x,y,xm,ym,xp,yp,J,Delta);
 		erg[i*3]=*(chain->spins+i*3) + h*(sigma[0]+4*sigma[3]+sigma[6])/6;
 		erg[i*3+1]=*(chain->spins+i*3+1) + h*(sigma[1]+4*sigma[4]+sigma[7])/6;
 		erg[i*3+2]=*(chain->spins+i*3+2) + h*(sigma[2]+4*sigma[5]+sigma[8])/6;
 		spinlaenge=sqrtf(erg[i*3+2]*erg[i*3+2] + erg[i*3+1]*erg[i*3+1] + erg[i*3]*erg[i*3]);
-		//--erg[i*3] = erg[i*3] / spinlaenge;
-		//erg[i*3+1] = erg[i*3+1] / spinlaenge;
-		//erg[i*3+2] = erg[i*3+2] / spinlaenge;
 		*(chain->spinssecond+i*3  ) = erg[i*3  ] / spinlaenge;
 		*(chain->spinssecond+i*3+1) = erg[i*3+1] / spinlaenge;
 		*(chain->spinssecond+i*3+2) = erg[i*3+2] / spinlaenge;
@@ -104,29 +103,27 @@ void progress_rk(struct spinchain *chain)
 	xp=*(chain->spins+3);
 	yp=*(chain->spins+4);
 	zp=*(chain->spins+5);
+	zcoupling=*(chain->randomzcoupling);
 	
-	sigma[0] = timedex(y,z,ym,zm,yp,zp,J,Delta);
-	sigma[1] = timedey(x,z,xm,zm,xp,zp,J,Delta);
+	sigma[0] = timedex(y,z,ym,zm,yp,zp,J,Delta,zcoupling);
+	sigma[1] = timedey(x,z,xm,zm,xp,zp,J,Delta,zcoupling);
 	sigma[2] = timedez(x,y,xm,ym,xp,yp,J,Delta);
 	x=x + 0.5*h*sigma[0];
 	y=y + 0.5*h*sigma[1];
 	z=z + 0.5*h*sigma[2];
-	sigma[3] = timedex(y,z,ym,zm,yp,zp,J,Delta);
-	sigma[4] = timedey(x,z,xm,zm,xp,zp,J,Delta);
+	sigma[3] = timedex(y,z,ym,zm,yp,zp,J,Delta,zcoupling);
+	sigma[4] = timedey(x,z,xm,zm,xp,zp,J,Delta,zcoupling);
 	sigma[5] = timedez(x,y,xm,ym,xp,yp,J,Delta);
 	x=x - 1.5*h*sigma[0] + 2*h*sigma[3];
 	y=y - 1.5*h*sigma[1] + 2*h*sigma[4];
 	z=z - 1.5*h*sigma[2] + 2*h*sigma[5];
-	sigma[6] = timedex(y,z,ym,zm,yp,zp,J,Delta);
-	sigma[7] = timedey(x,z,xm,zm,xp,zp,J,Delta);
+	sigma[6] = timedex(y,z,ym,zm,yp,zp,J,Delta,zcoupling);
+	sigma[7] = timedey(x,z,xm,zm,xp,zp,J,Delta,zcoupling);
 	sigma[8] = timedez(x,y,xm,ym,xp,yp,J,Delta);
 	erg[0]=*(chain->spins) + h*(sigma[0]+4*sigma[3]+sigma[6])/6;
 	erg[1]=*(chain->spins+1) + h*(sigma[1]+4*sigma[4]+sigma[7])/6;
 	erg[2]=*(chain->spins+2) + h*(sigma[2]+4*sigma[5]+sigma[8])/6;
 	spinlaenge=sqrtf(erg[0]*erg[0] + erg[1]*erg[1] + erg[2]*erg[2]);
-	//erg[0] = erg[0] / spinlaenge;
-	//erg[1] = erg[1] / spinlaenge;
-	//erg[2] = erg[2] / spinlaenge;
 	*(chain->spinssecond ) = erg[0] / spinlaenge;
 	*(chain->spinssecond+1) = erg[1] / spinlaenge;
 	*(chain->spinssecond+2) = erg[2] / spinlaenge;
@@ -142,39 +139,30 @@ void progress_rk(struct spinchain *chain)
 	xp=*(chain->spins);
 	yp=*(chain->spins+1);
 	zp=*(chain->spins+2);
+	zcoupling=*(chain->randomzcoupling+chain->size);
 
-	sigma[0] = timedex(y,z,ym,zm,yp,zp,J,Delta);
-	sigma[1] = timedey(x,z,xm,zm,xp,zp,J,Delta);
+	sigma[0] = timedex(y,z,ym,zm,yp,zp,J,Delta,zcoupling);
+	sigma[1] = timedey(x,z,xm,zm,xp,zp,J,Delta,zcoupling);
 	sigma[2] = timedez(x,y,xm,ym,xp,yp,J,Delta);
 	x=x + 0.5*h*sigma[0];
 	y=y + 0.5*h*sigma[1];
 	z=z + 0.5*h*sigma[2];
-	sigma[3] = timedex(y,z,ym,zm,yp,zp,J,Delta);
-	sigma[4] = timedey(x,z,xm,zm,xp,zp,J,Delta);
+	sigma[3] = timedex(y,z,ym,zm,yp,zp,J,Delta,zcoupling);
+	sigma[4] = timedey(x,z,xm,zm,xp,zp,J,Delta,zcoupling);
 	sigma[5] = timedez(x,y,xm,ym,xp,yp,J,Delta);
 	x=x - 1.5*h*sigma[0] + 2*h*sigma[3];
 	y=y - 1.5*h*sigma[1] + 2*h*sigma[4];
 	z=z - 1.5*h*sigma[2] + 2*h*sigma[5];
-	sigma[6] = timedex(y,z,ym,zm,yp,zp,J,Delta);
-	sigma[7] = timedey(x,z,xm,zm,xp,zp,J,Delta);
+	sigma[6] = timedex(y,z,ym,zm,yp,zp,J,Delta,zcoupling);
+	sigma[7] = timedey(x,z,xm,zm,xp,zp,J,Delta,zcoupling);
 	sigma[8] = timedez(x,y,xm,ym,xp,yp,J,Delta);
 	erg[chain->size*3-3]=*(chain->spins+chain->size*3-3) + h*(sigma[0]+4*sigma[3]+sigma[6])/6;
 	erg[chain->size*3-2]=*(chain->spins+chain->size*3-2) + h*(sigma[1]+4*sigma[4]+sigma[7])/6;
 	erg[chain->size*3-1]=*(chain->spins+chain->size*3-1) + h*(sigma[2]+4*sigma[5]+sigma[8])/6;
 	spinlaenge=sqrtf(erg[chain->size*3-3]*erg[chain->size*3-3] + erg[chain->size*3-2]*erg[chain->size*3-2] + erg[chain->size*3-1]*erg[chain->size*3-1]);
-	//erg[chain->size*3-3] = erg[chain->size*3-3] / spinlaenge;
-	//erg[chain->size*3-2] = erg[chain->size*3-2] / spinlaenge;
-	//erg[chain->size*3-1] = erg[chain->size*3-1] / spinlaenge;
 	*(chain->spinssecond+chain->size*3-3) = erg[chain->size*3-3] / spinlaenge;
 	*(chain->spinssecond+chain->size*3-2) = erg[chain->size*3-2] / spinlaenge;
 	*(chain->spinssecond+chain->size*3-1) = erg[chain->size*3-1] / spinlaenge;
-	
-	//float *spin = chain->spins;
-	//now lets copy our list  when using erg
-	//for (i=0; i<chain->size*3; i++)
-	//{
-	//	*(spin++) = erg[i];
-	//}
 
 	float *spinhelp = chain->spins;
 	chain->spins = chain->spinssecond;
@@ -185,7 +173,7 @@ void progress_rk(struct spinchain *chain)
 
 /* One step further with Euler of S_r
  * timede = Dt S_r = J^r_- - J^r_+
- * J^r_+- = +- J S_r x (s^x_r-1 , s^y_r-1, Delta s^z_r-1)
+ * J^r_+- = +- J S_r x (s^x_r-1 , s^y_r-1, Delta s^z_r-1)  + J h_r x S_r
  * x = S^x_r     y = S^y_r     z = S^z_r
  * x2= S^x_r-1   y2= S^y_r-1
  * x3= S^x_r+1   
@@ -194,7 +182,7 @@ void progress_eul(struct spinchain *chain)
 {
 	int i;
 	float erg[chain->size * 3];
-	float x,y,z,x2,y2,z2,x3,y3,z3,J,Delta, h;
+	float x,y,z,x2,y2,z2,x3,y3,z3,J,Delta, h, zcoupling;
 
 	J=chain->J;
 	Delta=chain->Delta;
@@ -212,8 +200,8 @@ void progress_eul(struct spinchain *chain)
 		y3=*(chain->spins+i*3+4);
 		z3=*(chain->spins+i*3+5);
 
-		erg[i*3]=*(chain->spins+i*3) + h * timedex(y,z,y2,z2,y3,z3,J,Delta);
-		erg[i*3+1]=*(chain->spins+i*3+1) + h*timedey(x,z,x2,z2,x3,z3,J,Delta);
+		erg[i*3]=*(chain->spins+i*3) + h * timedex(y,z,y2,z2,y3,z3,J,Delta,zcoupling);
+		erg[i*3+1]=*(chain->spins+i*3+1) + h*timedey(x,z,x2,z2,x3,z3,J,Delta,zcoupling);
 		erg[i*3+2]=*(chain->spins+i*3+2) + h*timedez(x,y,x2,y2,x3,y3,J,Delta);
 	}
 
@@ -229,8 +217,8 @@ void progress_eul(struct spinchain *chain)
 	y3=*(chain->spins+4);
 	z3=*(chain->spins+5);
 	
-	erg[0]=*(chain->spins) + h*timedex(y,z,y2,z2,y3,z3,J,Delta);
-	erg[1]=*(chain->spins+1) + h*timedey(x,z,x2,z2,x3,z3,J,Delta);
+	erg[0]=*(chain->spins) + h*timedex(y,z,y2,z2,y3,z3,J,Delta,zcoupling);
+	erg[1]=*(chain->spins+1) + h*timedey(x,z,x2,z2,x3,z3,J,Delta,zcoupling);
 	erg[2]=*(chain->spins+2) + h*timedez(x,y,x2,y2,x3,y3,J,Delta);
 
 	//nur noch für den letzten spin berechnet
@@ -245,8 +233,8 @@ void progress_eul(struct spinchain *chain)
 	y3=*(chain->spins+1);
 	z3=*(chain->spins+2);
 
-	erg[chain->size*3-3]=*(chain->spins+i*3) + h*timedex(y,z,y2,z2,y3,z3,J,Delta);
-	erg[chain->size*3-2]=*(chain->spins+i*3+1) + h*timedey(x,z,x2,z2,x3,z3,J,Delta);
+	erg[chain->size*3-3]=*(chain->spins+i*3) + h*timedex(y,z,y2,z2,y3,z3,J,Delta,zcoupling);
+	erg[chain->size*3-2]=*(chain->spins+i*3+1) + h*timedey(x,z,x2,z2,x3,z3,J,Delta,zcoupling);
 	erg[chain->size*3-1]=*(chain->spins+i*3+2) + h*timedez(x,y,x2,y2,x3,y3,J,Delta);
 	
 	float *spin = chain->spins;
@@ -367,7 +355,7 @@ void printforce_chain(struct spinchain *chain)
  * TODO: remove alhpa before forschleife, work on A
  *       work on printfs
  */
-struct spinchain *create_spinchain(int *size, float *timestep, float *J, float *Delta, float *q, int *id)
+struct spinchain *create_spinchain(int *size, float *timestep, float *J, float *Delta, float *q, int *id, float zcouplingmax)
 {
 	float a, alpha;
 	struct spinchain *chain = malloc(sizeof(struct spinchain));
@@ -390,6 +378,7 @@ struct spinchain *create_spinchain(int *size, float *timestep, float *J, float *
 	int r;
 	chain->spins = calloc(3* *size,64);
 	chain->spinssecond = calloc(3* *size,64);
+	chain->randomzcoupling = calloc(*size,64);
 	for (r=0; r< *size; r++)
 	{
 		singlerandomnumber = 0.001 * (float)*(allrandomnumber + 5 + r);
@@ -399,6 +388,8 @@ struct spinchain *create_spinchain(int *size, float *timestep, float *J, float *
 		*(chain->spins+(r*3)  )=beginningx(*q, a, alpha, A, r);
 		*(chain->spins+(r*3)+1)=beginningy(*q, a, alpha, A, r);
 		*(chain->spins+(r*3)+2)=beginningz(*q, a, alpha, A, r);
+		//singlerandomnumber = 0.001 * (float)*(allrandomnumber + 5 + r + *size);
+		*(chain->randomzcoupling+r)=singlerandomnumber*zcouplingmax;
 	}
 	chain->timestep = *timestep;
 	chain->J = *J;
@@ -433,25 +424,21 @@ void free_spinchain(struct spinchain *chain)
  * x2= S^x_r-1   y2= S^y_r-1
  * x3= S^x_r+1   
  */
-//float timedex(float x, float y, float z, float x2, float y2, float z2, float x3, float y3, float z3, float J, float Delta)
-float timedex(float y, float z, float y2, float z2, float y3, float z3, float J, float Delta)
+float timedex(float y, float z, float y2, float z2, float y3, float z3, float J, float Delta, float zcoupling)
 {
-	//return J * (Delta * y * (z2 - z3) +         z * ( y2 - y3));
-	return J * ( z * ( y2 + y3)  -  Delta * y * (z2 + z3) );
+	return J * (         z * ( y2 + y3)  -  Delta * y * (z2 + z3) + y * zcoupling);
 } 
 
 
-float timedey(float x, float z, float x2, float z2, float x3, float z3, float J, float Delta)
+float timedey(float x, float z, float x2, float z2, float x3, float z3, float J, float Delta, float zcoupling)
 {
-	//return J * (        z * (x2 - x3) + Delta * x * (y2 - y3));
-	return J * (  Delta * x * (z2 + z3) -        z * (x2 + x3) );
+	return J * ( Delta * x * (z2 + z3) -            z * (x2 + x3) - x * zcoupling );
 }
 
 
 float timedez(float x, float y, float x2, float y2, float x3, float y3, float J, float Delta)
 {
-	//return J * (        x * (y2 - y3) +         y * (x2 - x3));
-	return J * (  y * (x2 + x3)   -   x * (y2 + y3) );
+	return J * (         y * (x2 + x3)   -          x * (y2 + y3) );
 }
 
 
