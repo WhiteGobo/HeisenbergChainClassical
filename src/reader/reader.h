@@ -1,1 +1,1 @@
-void *intsofsize(char *file, int size, int menge, int *asd);
+int intsofsize(char *file, int size, int menge, int *asd);
