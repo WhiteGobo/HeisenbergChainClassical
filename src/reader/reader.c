@@ -6,8 +6,9 @@
 
 /* Read all the random number out of a random file
  * free pointer afterwards
+ * ERROR: 0 Success; -1 File not big enough; -2 no File exists
  */
-void *intsofsize(char *file, int size, int menge, int *return_list)
+int intsofsize(char *file, int size, int menge, int *return_list)
 {
 	int i, return_value, r; r=0;
 	char zeichen;
@@ -16,6 +17,11 @@ void *intsofsize(char *file, int size, int menge, int *return_list)
 	if(save != NULL){
 		zeichen = (char)fgetc(save);
 		while( zeichen != EOF && r < menge){
+			if (zeichen != EOF){
+				puts("File %s hasnt enough numbers(needed: %d)", file, size);
+				fclose(save);
+				return -1;
+			}
 			for(i=0;i<size;i++){
 				number[i]=zeichen;
 				zeichen = (char)fgetc(save);
@@ -24,7 +30,11 @@ void *intsofsize(char *file, int size, int menge, int *return_list)
 			*(return_list + r++) = return_value;
 		}
 	}
-	else printf("ERROR: no file found, open %s", file);
+	else{
+		puts("No file %s found", file);
+		return -2;
+	}
 	fclose(save);
+	return 0;
 }
 
