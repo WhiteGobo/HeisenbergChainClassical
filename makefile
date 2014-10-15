@@ -1,5 +1,6 @@
 CC=gcc
-CCFLAGS=-lm 
+CCFLAGS=-lm  -D_REENTRANT -lpthread
+
 PROGRAM=main
 
 all: program
