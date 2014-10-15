@@ -30,7 +30,6 @@ void request_data (void)
 }
 
 
-
 void *calculate_spinchain(void *id)
 {
 	int i;
@@ -79,29 +78,6 @@ int main (int argc, char **argv)
 	pthread_t calcChain_Thread[MaxId];
 	for(i=0;i < MaxId;i++)
 	{
-		/*
-		chain = (struct spinchain *)create_spinchain(&size, &timestep, &J, &Delta, &q, &id, zcouplingmax);
-		//print_chain(chain);
-		//printmode_chain(chain, &q);
-		//printforce_chain(chain);
-		//plot_chain(chain);
-		plotmode_chain(chain, &q);
-		for (i=0; i< time; i++){
-			progress_rk(chain);
-			//printmode_chain(chain, &q);
-			//progress_eul(chain);
-			if(i%100 == 0) plotmodecycle_chain(chain);
-			//if(i%10 == 0) printforce_chain(chain);
-			//if(i%3000 == 0) plot_chain(chain);
-		}
-		//print_chain(chain);
-		//printmode_chain(chain, &q);
-		//printforce_chain(chain);
-		//plot_chain(chain);
-		plotmodeend_chain(chain);
-		free_spinchain(chain);
-		*/ //Alles ausgeklammert wegen ThreadProgrammierung
-
 		printf("Simulation: %d\n", i);
 		id[i]=i;
 		pthread_create (calcChain_Thread+i, NULL, calculate_spinchain, id+i);
