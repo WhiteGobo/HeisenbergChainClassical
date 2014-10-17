@@ -362,10 +362,10 @@ struct spinchain *create_spinchain(int *size, float *timestep, float *J, float *
 	chain->size = *size;
 
 	int *allrandomnumber;
-	allrandomnumber = calloc(5+ (2* *size), sizeof(int));
+	allrandomnumber = calloc(5+ (3* *size), sizeof(int));
 	char name[20];
 	sprintf(name, "data/random%03d.dat", *id);
-	intsofsize(name,3, 5+(2* *size), allrandomnumber);
+	intsofsize(name,3, 5+(3* *size), allrandomnumber);
 	float singlerandomnumber;
 
 	//singlerandomnumber = 0.001 * (float)*(allrandomnumber );
@@ -388,7 +388,7 @@ struct spinchain *create_spinchain(int *size, float *timestep, float *J, float *
 		*(chain->spins+(r*3)  )=beginningx(*q, a, alpha, A, r);
 		*(chain->spins+(r*3)+1)=beginningy(*q, a, alpha, A, r);
 		*(chain->spins+(r*3)+2)=beginningz(*q, a, alpha, A, r);
-		//singlerandomnumber = 0.001 * (float)*(allrandomnumber + 5 + r + *size);
+		singlerandomnumber = 0.001 * (float)*(allrandomnumber + 5 + r + (2* *size));
 		*(chain->randomzcoupling+r)=singlerandomnumber*zcouplingmax;
 	}
 	chain->timestep = *timestep;

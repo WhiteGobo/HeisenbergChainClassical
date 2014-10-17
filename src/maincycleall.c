@@ -12,9 +12,10 @@ float J = -1.0;
 float Delta = 1.5;
 int timemax;
 int k = 1000;
-int MaxId = 200;
+int MaxId = 100;
 float zcouplingmax = 0.0;
 float q;
+int runningThreads = 0;
 
 /* Read data of the Heisenbergchain
  */
@@ -39,12 +40,12 @@ void *calculate_spinchain(void *id)
 	//printmode_chain(chain, &q);
 	//printforce_chain(chain);
 	//plot_chain(chain);
-	plotmode_chain(chain, &q);
+	//plotmode_chain(chain, &q);
 	for (i=0; i< timemax; i++){
-		progress_rk(chain);
+		//progress_rk(chain);
 		//printmode_chain(chain, &q);
 		//progress_eul(chain);
-		if(i%100 == 0) plotmodecycle_chain(chain);
+		//if(i%100 == 0) plotmodecycle_chain(chain);
 		//if(i%10 == 0) printforce_chain(chain);
 		//if(i%3000 == 0) plot_chain(chain);
 	}
@@ -52,8 +53,9 @@ void *calculate_spinchain(void *id)
 	//printmode_chain(chain, &q);
 	//printforce_chain(chain);
 	//plot_chain(chain);
-	plotmodeend_chain(chain);
+	//plotmodeend_chain(chain);
 	free_spinchain(chain);
+	runningThreads--;
 	return 0;
 }
 
@@ -78,11 +80,13 @@ int main (int argc, char **argv)
 	pthread_t calcChain_Thread[MaxId];
 	for(i=0;i < MaxId;i++)
 	{
-		printf("Simulation: %d\n", i);
+		while (runningThreads > 8) wait(1000);
 		id[i]=i;
+		runningThreads++;
 		pthread_create (calcChain_Thread+i, NULL, calculate_spinchain, id+i);
 		pthread_detach (*(calcChain_Thread+i));
 
 	}
+	while (runningThreads != 0) wait(1000);
 	return EXIT_SUCCESS;
 }

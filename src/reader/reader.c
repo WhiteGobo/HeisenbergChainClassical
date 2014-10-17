@@ -18,8 +18,8 @@ int intsofsize(char *file, int size, int menge, int *return_list)
 	if(save != NULL){
 		zeichen = (char)fgetc(save);
 		while( zeichen != EOF && r < menge){
-			if (zeichen != EOF){
-				sprintf(string,"File %s hasnt enough numbers(needed: %d)", file, size);
+			if (zeichen == EOF){
+				sprintf(string,"File %s hasnt enough numbers(needed: %d)", file, menge);
 				puts(string);
 				fclose(save);
 				return -1;
