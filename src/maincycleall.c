@@ -16,6 +16,8 @@ int MaxId = 100;
 float zcouplingmax = 0.0;
 float q;
 int runningThreads = 0;
+pthread_mutex_t lock_runningThreads;
+
 
 /* Read data of the Heisenbergchain
  */
@@ -55,7 +57,9 @@ void *calculate_spinchain(void *id)
 	//plot_chain(chain);
 	//plotmodeend_chain(chain);
 	free_spinchain(chain);
+	pthread_mutex_lock(&lock_runningThreads);
 	runningThreads--;
+	pthread_mutex_unlock(&lock_runningThreads);
 	return 0;
 }
 
@@ -80,9 +84,14 @@ int main (int argc, char **argv)
 	pthread_t calcChain_Thread[MaxId];
 	for(i=0;i < MaxId;i++)
 	{
-		while (runningThreads > 8) wait(1000);
-		id[i]=i;
+		pthread_mutex_lock(&lock_runningThreads);
+		while (runningThreads > 8){
+			pthread_mutex_unlock(&lock_runningThreads);
+			wait(1000);
+		}
 		runningThreads++;
+		pthread_mutex_unlock(&lock_runningThreads);
+		id[i]=i;
 		pthread_create (calcChain_Thread+i, NULL, calculate_spinchain, id+i);
 		pthread_detach (*(calcChain_Thread+i));
 
