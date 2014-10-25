@@ -34,6 +34,7 @@ float timedez(float x, float y, float x2, float y2, float x3, float y3, float J,
 void plotmode_chain(struct spinchain *chain, float *qanalysis);
 void plotmodecycle_chain(struct spinchain *chain);
 void plotmodeend_chain(struct spinchain *chain);
+void allocfail(char *errmessage);
 
 
 /* One step further with Runge-Kutta of S_r
@@ -363,9 +364,13 @@ struct spinchain *create_spinchain(int *size, float *timestep, float *J, float *
 
 	int *allrandomnumber;
 	allrandomnumber = calloc(5+ (3* *size), sizeof(int));
-	char name[20];
+	if(allrandomnumber == NULL){
+		allocfail("allokieren von allrandomnumber");
+		return NULL;
+	}
+	char name[30];
 	sprintf(name, "data/random%03d.dat", *id);
-	intsofsize(name,3, 5+(3* *size), allrandomnumber);
+	if(intsofsize(name,3, 5+(3* *size), allrandomnumber)<0) return NULL;
 	float singlerandomnumber;
 
 	//singlerandomnumber = 0.001 * (float)*(allrandomnumber );
@@ -377,8 +382,28 @@ struct spinchain *create_spinchain(int *size, float *timestep, float *J, float *
 
 	int r;
 	chain->spins = calloc(3* *size,64);
+	if(chain->spins == NULL){
+		allocfail("allokieren von spins");
+		free(allrandomnumber);
+		return NULL;
+	}
 	chain->spinssecond = calloc(3* *size,64);
+	if(chain->spinssecond == NULL){
+		allocfail("allokieren von spinssecond");
+		free(allrandomnumber);
+		free(chain->spins);
+		return NULL;
+	}
 	chain->randomzcoupling = calloc(*size,64);
+	if(chain->randomzcoupling == NULL){
+		allocfail("allokieren von randomzcoupling");
+		free(allrandomnumber);
+		free(chain->spins);
+		free(chain->spinssecond);
+		return NULL;
+	}
+
+
 	for (r=0; r< *size; r++)
 	{
 		singlerandomnumber = 0.001 * (float)*(allrandomnumber + 5 + r);
@@ -461,4 +486,11 @@ float beginningy(float q, float  a, float  alpha, float A, int r)
 float beginningz(float q, float  a, float  alpha, float A, int r)
 {
 	return  A * cos(q*r) * a;
+}
+
+
+
+void allocfail(char *errmessage)
+{
+	
 }

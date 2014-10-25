@@ -17,7 +17,8 @@ float zcouplingmax = 0.0;
 float q;
 int runningThreads = 0;
 pthread_mutex_t lock_runningThreads;
-
+int max_Threads = 4;
+int waitingtime = 10;
 
 /* Read data of the Heisenbergchain
  */
@@ -64,6 +65,19 @@ void *calculate_spinchain(void *id)
 }
 
 
+
+int checkandincrease_runningThreads(int maximum)
+{
+	while (pthread_mutex_trylock(&lock_runningThreads) != 0) sleep(waitingtime);
+	if (runningThreads > maximum){
+		pthread_mutex_unlock(&lock_runningThreads);
+		return -1;
+	}
+	runningThreads++;
+	pthread_mutex_unlock(&lock_runningThreads);
+	return 0;
+}
+
 /* Here we take a random derivation of spins in classical dynamic
  * Then we process them in time and look upon their result(fourrierAnalysis)
  * TODO: Randomnumbergenerator; improve process of time; save and plot
@@ -84,18 +98,12 @@ int main (int argc, char **argv)
 	pthread_t calcChain_Thread[MaxId];
 	for(i=0;i < MaxId;i++)
 	{
-		pthread_mutex_lock(&lock_runningThreads);
-		while (runningThreads > 8){
-			pthread_mutex_unlock(&lock_runningThreads);
-			wait(1000);
-		}
-		runningThreads++;
-		pthread_mutex_unlock(&lock_runningThreads);
 		id[i]=i;
 		pthread_create (calcChain_Thread+i, NULL, calculate_spinchain, id+i);
 		pthread_detach (*(calcChain_Thread+i));
-
+		
+		while (checkandincrease_runningThreads(max_Threads) != 0) sleep(waitingtime);
 	}
-	while (runningThreads != 0) wait(1000);
+	while (checkandincrease_runningThreads(0) != 0) sleep(waitingtime);
 	return EXIT_SUCCESS;
 }
