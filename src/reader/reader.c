@@ -19,8 +19,8 @@ int intsofsize(char *file, int size, int menge, int *return_list)
 		zeichen = (char)fgetc(save);
 		while( zeichen != EOF && r < menge){
 			if (zeichen == EOF){
-				sprintf(string,"File %s hasnt enough numbers(needed: %d)", file, menge);
-				puts(string);
+				sprintf(string,"File %s hasnt enough numbers(needed: %d)\n", file, menge);
+				fputs(string, stderr);
 				fclose(save);
 				return -1;
 			}
@@ -33,8 +33,8 @@ int intsofsize(char *file, int size, int menge, int *return_list)
 		}
 	}
 	else{
-		sprintf(string, "No file %s found", file);
-		puts(string);
+		sprintf(string, "File %s couldnt be opened.\n", file);
+		fputs(string, stderr);
 		return -2;
 	}
 	fclose(save);

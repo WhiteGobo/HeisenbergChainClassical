@@ -2,6 +2,8 @@
 #include <string.h> //für strlen
 #include <stdlib.h> //für EXIT_SUCCESS
 #include <pthread.h>
+#include <sys/resource.h>
+#include <errno.h>
 
 static float pi = 3.141592653;
 
@@ -12,7 +14,7 @@ float J = -1.0;
 float Delta = 1.5;
 int timemax;
 int k = 1000;
-int MaxId = 100;
+int MaxId = 2;
 float zcouplingmax = 0.0;
 float q;
 int runningThreads = 0;
@@ -38,26 +40,28 @@ void *calculate_spinchain(void *id)
 {
 	int i;
 	struct spinchain *chain;
-	chain = (struct spinchain *)create_spinchain(&size, &timestep, &J, &Delta, &q, (int*)id, zcouplingmax);
-	//print_chain(chain);
-	//printmode_chain(chain, &q);
-	//printforce_chain(chain);
-	//plot_chain(chain);
-	//plotmode_chain(chain, &q);
-	for (i=0; i< timemax; i++){
-		//progress_rk(chain);
+	chain = (struct spinchain *)create_spinchain(size, timestep, J, Delta, q, (int*)id, zcouplingmax);
+	if(chain != NULL){
+		//print_chain(chain);
 		//printmode_chain(chain, &q);
-		//progress_eul(chain);
-		//if(i%100 == 0) plotmodecycle_chain(chain);
-		//if(i%10 == 0) printforce_chain(chain);
-		//if(i%3000 == 0) plot_chain(chain);
+		//printforce_chain(chain);
+		//plot_chain(chain);
+		//plotmode_chain(chain, &q);
+		for (i=0; i< timemax; i++){
+			//progress_rk(chain);
+			//printmode_chain(chain, &q);
+			//progress_eul(chain);
+			//if(i%100 == 0) plotmodecycle_chain(chain);
+			//if(i%10 == 0) printforce_chain(chain);
+			//if(i%3000 == 0) plot_chain(chain);
+		}
+		//print_chain(chain);
+		//printmode_chain(chain, &q);
+		//printforce_chain(chain);
+		//plot_chain(chain);
+		//plotmodeend_chain(chain);
+		free_spinchain(chain);
 	}
-	//print_chain(chain);
-	//printmode_chain(chain, &q);
-	//printforce_chain(chain);
-	//plot_chain(chain);
-	//plotmodeend_chain(chain);
-	free_spinchain(chain);
 	pthread_mutex_lock(&lock_runningThreads);
 	runningThreads--;
 	pthread_mutex_unlock(&lock_runningThreads);
@@ -78,6 +82,19 @@ int checkandincrease_runningThreads(int maximum)
 	return 0;
 }
 
+
+
+
+void getlimit(void)
+{
+	struct rlimit info;
+	if(getrlimit(RLIMIT_AS, &info) != 0){
+		fputs("failed to load Limits\n", stderr);
+		fputs(strerror(errno), stderr);
+	}
+	printf("Limits of memory: %d\n", (long)info.rlim_max);
+}
+
 /* Here we take a random derivation of spins in classical dynamic
  * Then we process them in time and look upon their result(fourrierAnalysis)
  * TODO: Randomnumbergenerator; improve process of time; save and plot
@@ -86,10 +103,9 @@ int main (int argc, char **argv)
 {
 	int i;
 	int id[MaxId];
-
 	float q;
 
-	request_data();
+	//request_data();
 
 	timemax = 1000;
 	timemax = timemax / timestep;
