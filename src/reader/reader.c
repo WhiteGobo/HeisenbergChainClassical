@@ -16,7 +16,7 @@ int intsofsize(char *file, int size, int menge, int *return_list)
 	char number[size];
 	FILE *save = fopen(file, "r");
 	if(save != NULL){
-		while( zeichen != EOF && r < menge){
+		while(r < menge){
 			for(i=0;i<size;i++){
 				zeichen = (char)fgetc(save);
 				if (zeichen == EOF){
