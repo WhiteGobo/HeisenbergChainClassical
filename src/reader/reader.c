@@ -16,17 +16,16 @@ int intsofsize(char *file, int size, int menge, int *return_list)
 	char number[size];
 	FILE *save = fopen(file, "r");
 	if(save != NULL){
-		zeichen = (char)fgetc(save);
 		while( zeichen != EOF && r < menge){
-			if (zeichen == EOF){
-				sprintf(string,"File %s hasnt enough numbers(needed: %d)\n", file, menge);
-				fputs(string, stderr);
-				fclose(save);
-				return -1;
-			}
 			for(i=0;i<size;i++){
-				number[i]=zeichen;
 				zeichen = (char)fgetc(save);
+				if (zeichen == EOF){
+					sprintf(string,"File %s hasnt enough numbers(needed: %d)\n", file, menge);
+					fputs(string, stderr);
+					fclose(save);
+					return -1;
+				}
+				number[i]=zeichen;
 			}
 			sscanf(number,"%d", &return_value);
 			*(return_list + r++) = return_value;
