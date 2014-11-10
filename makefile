@@ -5,10 +5,7 @@ PROGRAM=main
 
 all: program
 
-program: timechain.o main.o plotter.o reader.o
-	$(CC) $(CCFLAGS) -I src/ main.o timechain.o plotter.o reader.o -o program
-
-program2: timechain.o maincycleall.o plotter.o reader.o
+program: timechain.o maincycleall.o plotter.o reader.o
 	$(CC) $(CCFLAGS) -I src/ maincycleall.o timechain.o plotter.o reader.o -o program2
 
 timechain.o: src/timechain/timechain.c src/plotter/plotter.h src/reader/reader.h
@@ -28,4 +25,3 @@ maincycleall.o: src/maincycleall.c src/timechain/timechain.h
 
 clean:
 	rm *.o
-	rm testing.*

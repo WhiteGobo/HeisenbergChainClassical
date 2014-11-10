@@ -276,7 +276,7 @@ void plot_chain(struct spinchain *chain)
 	char name[255];
 	sprintf(name, "output/heismode%04.0f_%03d_%.3f_%.2f.dat", chain->time, chain->id, chain->q, chain->Delta);
 	char headerstring[255];
-	sprintf(headerstring,"# id:                 %d\n# size:               %d\n# time:               %E\n# coupling constant:  %E\n# inhomogenity Delta: %E\n", chain->id, chain->size, chain->time,chain->J, chain->Delta);
+	sprintf(headerstring,"# id:                 %d\n# size:               %d\n# time:               %E\n# coupling constant:  %E\n# inhomogenity Delta: %E\n# zcouplingmax:     %E\n", chain->id, chain->size, chain->time,chain->J, chain->Delta, chain->max_zcoupling);
 	print_main(data, name, headerstring);
 	close_inhalt(data);
 }
@@ -408,7 +408,7 @@ struct spinchain *create_spinchain(int size, float timestep, float J, float Delt
 		*(chain->spins+(r*3)+1)=beginningy(q, a, alpha, A, r);
 		*(chain->spins+(r*3)+2)=beginningz(q, a, alpha, A, r);
 		singlerandomnumber = 0.001 * (float)*(allrandomnumber + 5 + r + (2* size));
-		*(chain->randomzcoupling+r)=singlerandomnumber*zcouplingmax;
+		*(chain->randomzcoupling+r)=((2*singlerandomnumber)-1)*zcouplingmax;
 	}
 	chain->timestep = timestep;
 	chain->J = J;

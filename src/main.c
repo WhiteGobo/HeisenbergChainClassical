@@ -1,13 +1,100 @@
 #include <stdio.h>
 #include <string.h> //für strlen
 #include <stdlib.h> //für EXIT_SUCCESS
+#include <pthread.h>
+#include <sys/resource.h>
+#include <errno.h>
+#include "timechain/timechain.h"
 
 static float pi = 3.141592653;
 
-int size, id, k, time;
-float timestep, J, Delta, q, a, alpha;
+
+int size = 18000;
+float timestep = 0.01;
+float J = -1.0;
+float Delta = 1.5;
+int timemax;
+int k = 1000;
+int MaxId = 1000;
+float zcouplingmax = 0.0;
+float q;
+int runningThreads = 0;
+pthread_mutex_t lock_runningThreads;
+int max_Threads = 10;
+int waitingtime = 10;
+
+/* Read data of the Heisenbergchain
+ */
+void request_data (void)
+{
+	scanf("%d", &size);
+	scanf("%f", &timestep);
+	scanf("%f", &Delta);
+	scanf("%f", &J);
+	scanf("%d", &timemax);
+	scanf("%d", &k);
+	scanf("%f", &zcouplingmax);
+}
 
 
+void *calculate_spinchain(void *id)
+{
+	int i;
+	struct spinchain *chain;
+	chain = (struct spinchain *)create_spinchain(size, timestep, J, Delta, q, (int*)id, zcouplingmax);
+	if(chain != NULL){
+		//print_chain(chain);
+		//printmode_chain(chain, &q);
+		//printforce_chain(chain);
+		//plot_chain(chain);
+		plotmode_chain(chain, q);
+		for (i=0; i< timemax; i++){
+			progress_rk(chain);
+			//printmode_chain(chain, &q);
+			//progress_eul(chain);
+			if(i%100 == 0) plotmodecycle_chain(chain);
+			//if(i%10 == 0) printforce_chain(chain);
+			//if(i%3000 == 0) plot_chain(chain);
+		}
+		//print_chain(chain);
+		//printmode_chain(chain, &q);
+		//printforce_chain(chain);
+		//plot_chain(chain);
+		plotmodeend_chain(chain);
+		free_spinchain(chain);
+	}
+	pthread_mutex_lock(&lock_runningThreads);
+	runningThreads--;
+	pthread_mutex_unlock(&lock_runningThreads);
+	return 0;
+}
+
+
+
+int checkandincrease_runningThreads(int maximum)
+{
+	while (pthread_mutex_trylock(&lock_runningThreads) != 0) sleep(waitingtime);
+	if (runningThreads > maximum){
+		pthread_mutex_unlock(&lock_runningThreads);
+		return -1;
+	}
+	runningThreads++;
+	pthread_mutex_unlock(&lock_runningThreads);
+	return 0;
+}
+
+
+
+
+void getlimit(void)
+{
+	struct rlimit info;
+	if(getrlimit(RLIMIT_AS, &info) != 0){
+		fputs("failed to load Limits\n", stderr);
+		fputs(strerror(errno), stderr);
+	}
+	printf("Limits of memory: %d\n", (long)info.rlim_max);
+}
 
 /* Here we take a random derivation of spins in classical dynamic
  * Then we process them in time and look upon their result(fourrierAnalysis)
@@ -15,80 +102,24 @@ float timestep, J, Delta, q, a, alpha;
  */
 int main (int argc, char **argv)
 {
-	size = 10000;
-	timestep = 0.01;
-	Delta = 1.5;
-	J = 1;
-	time = 1000;
-	id = 0;
-	k = 20;
-
-	//printf("Wir berechnen eine Spin-Kette:\n");
-	
-	//int size, id, k;
-	//float timestep, J, Delta, q, a, alpha;
-
-	//printf("Bitte geben sie die Größe des Systems ein: ");
-	//scanf("%d", &size);
-	//printf("\n");
-
-	//printf("Bitte geben sie die Zeitschrittlänge ein: ");
-	//scanf("%f", &timestep);
-	//printf("\n");
-
-	//printf("Bitte geben sie die Inhomogenität ein: ");
-	//scanf("%f", &Delta);
-	//printf("\n");
-
-	//printf("Bitte geben sie die Stärke der Dipolkopplung ein: ");
-	//scanf("%f", &J);
-	//printf("\n");
-
-	k = 10.0;
-	q = 2 * pi * k / size;
-	//A = 5.0;
-	a = 0.6;
-	alpha = 1.1;
-
-	//int time;
-	//printf("Bitte geben sie die Dauer der Simulation ein: ");
-	//scanf("%d", &time);
-	//printf("\n");
-	time = time / timestep;
-
-	//printf("Bitte geben sie die Id für die Zufallszahlen ein: ");
-	//scanf("%d", &id);
-	//printf("%d\n", id);
-
-
-	//printf("Bitte geben sie die Wellenlänge ein: ");
-	//scanf("%d", &k);
-	//printf("%d, %daaaaaaaa \n", id, k);
-	//q = 2 * pi * k / size;
-
-	struct spinchain *chain;
-	chain = (struct spinchain *)create_spinchain(&size, &timestep, &J, &Delta, &q, &id, 0.0);
-	//print_chain(chain);
-	//printmode_chain(chain, &q);
-	//printforce_chain(chain);
-	plot_chain(chain);
-	//plotmode_chain(chain, &q);
 	int i;
-	for (i=0; i< time; i++){
-		//progress_rk(chain);
-		//printmode_chain(chain, &q);
-		//progress_eul(chain);
-		//if(i%10 == 0) plotmodecycle_chain(chain);
-		//if(i%10 == 0) printforce_chain(chain);
-		//if(i%50 == 0) plot_chain(chain);
-		//if(i%5000 == 0) printmode_chain(chain, &q);
+	int id[MaxId];
+
+	//request_data();
+
+	timemax = 1000;
+	timemax = timemax / timestep;
+	q = 2 * pi * k / size;
+
+	pthread_t calcChain_Thread[MaxId];
+	for(i=0;i < MaxId;i++)
+	{
+		id[i]=i;
+		pthread_create (calcChain_Thread+i, NULL, calculate_spinchain, id+i);
+		pthread_detach (*(calcChain_Thread+i));
+		
+		while (checkandincrease_runningThreads(max_Threads) != 0) sleep(waitingtime);
 	}
-	//print_chain(chain);
-	//printmode_chain(chain, &q);
-	//printforce_chain(chain);
-	//plot_chain(chain);
-	//plotmodeend_chain(chain);
-	free_spinchain(chain);
+	while (checkandincrease_runningThreads(0) != 0) sleep(waitingtime);
 	return EXIT_SUCCESS;
 }
-
