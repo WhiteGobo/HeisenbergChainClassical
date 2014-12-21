@@ -20,7 +20,7 @@ float zcouplingmax = 0.0;
 float q;
 int runningThreads = 0;
 pthread_mutex_t lock_runningThreads;
-int max_Threads = 10;
+int max_Threads = 8;
 int waitingtime = 10;
 
 /* Read data of the Heisenbergchain
@@ -105,9 +105,8 @@ int main (int argc, char **argv)
 	int i;
 	int id[MaxId];
 
-	//request_data();
+	request_data();
 
-	timemax = 1000;
 	timemax = timemax / timestep;
 	q = 2 * pi * k / size;
 
