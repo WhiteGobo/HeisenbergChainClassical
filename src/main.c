@@ -15,9 +15,11 @@ float J = -1.0;
 float Delta = 1.5;
 int timemax;
 int k = 1000;
-int MaxId = 1000;
+//int MaxId = 1000;
+int MaxId = 10;
 float zcouplingmax = 0.0;
 float q;
+int qnumber;
 int runningThreads = 0;
 pthread_mutex_t lock_runningThreads;
 int max_Threads = 8;
@@ -41,7 +43,8 @@ void *calculate_spinchain(void *id)
 {
 	int i;
 	struct spinchain *chain;
-	chain = (struct spinchain *)create_spinchain(size, timestep, J, Delta, q, (int*)id, zcouplingmax);
+	printf("halo: %f\n", timestep);
+	chain = (struct spinchain *)create_spinchain2(size, timestep, J, Delta, qnumber, (int*)id, zcouplingmax);
 	if(chain != NULL){
 		//print_chain(chain);
 		//printmode_chain(chain, &q);
@@ -109,6 +112,7 @@ int main (int argc, char **argv)
 
 	timemax = timemax / timestep;
 	q = 2 * pi * k / size;
+	qnumber = (int)size / k;
 
 	pthread_t calcChain_Thread[MaxId];
 	for(i=0;i < MaxId;i++)
