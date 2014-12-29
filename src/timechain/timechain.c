@@ -29,15 +29,11 @@ void print_chain(struct spinchain *chain);
 void printmode_chain(struct spinchain *chain, float *q);
 void plotmodebegin_chain(struct spinchain *chain, float q);
 void printforce_chain(struct spinchain *chain);
-struct spinchain *create_spinchain(int size, float timestep, float J, float Delta, float q, int *id, float zcouplingmax);
-struct spinchain *create_spinchain2(int size, float timestep, float J, float Delta, int qnumber, int *id, float zcouplingmax);
+struct spinchain *create_spinchain(int size, float timestep, float J, float Delta, int qnumber, int *id, float zcouplingmax);
 void free_spinchain(struct spinchain *chain);
-float beginningx(float q, float  a, float  alpha, float A, int r);
-float beginningy(float q, float  a, float  alpha, float A, int r);
-float beginningz(float q, float  a, float  alpha, float A, int r);
-float beginningx2(float cosqr, float  a, float  alpha, float A, int r);
-float beginningy2(float cosqr, float  a, float  alpha, float A, int r);
-float beginningz2(float cosqr, float  a, float  alpha, float A, int r);
+float beginningx(float cosqr, float  a, float  alpha, float A, int r);
+float beginningy(float cosqr, float  a, float  alpha, float A, int r);
+float beginningz(float cosqr, float  a, float  alpha, float A, int r);
 float timedex(float y, float z, float y2, float z2, float y3, float z3, float J, float Delta, float zcoupling);
 float timedey(float x, float z, float x2, float z2, float x3, float z3, float J, float Delta, float zcoupling);
 float timedez(float x, float y, float x2, float y2, float x3, float y3, float J, float Delta);
@@ -369,85 +365,7 @@ void printforce_chain(struct spinchain *chain)
  * TODO: remove alhpa before forschleife, work on A
  *       work on printfs
  */
-struct spinchain *create_spinchain(int size, float timestep, float J, float Delta, float q, int *id, float zcouplingmax)
-{
-	float a, A, alpha, singlerandomnumber;
-	int r;
-	struct spinchain *chain = malloc(sizeof(struct spinchain));
-	char name[30];
-	int *allrandomnumber;
-	
-	chain->size = size;
-	if(alloc_spinchain(chain) != 0) return NULL;
-
-	allrandomnumber = calloc(5+ (3* size), sizeof(int));
-	if(allrandomnumber == NULL){
-		fputs("allokieren von allrandomnumber\n", stderr);
-		free(chain->spins);
-		free(chain->spinssecond);
-		free(chain->randomzcoupling);
-		free(chain);
-		return NULL;
-	}
-	sprintf(name, "data/random%03d.dat", *id);
-	if(intsofsize(name,3, 5+(3* size), allrandomnumber)<0){
-		free(chain->spins);
-		free(chain->spinssecond);
-		free(chain->randomzcoupling);
-		free(chain);
-		free(allrandomnumber);
-		return NULL;
-	}
-
-	//singlerandomnumber = 0.001 * (float)*(allrandomnumber );
-	//float alpha=singlerandomnumber*2*3.141592653;	
-
-	//singlerandomnumber = 0.001 * (float)*(allrandomnumber + 1);
-	singlerandomnumber = 0.25;
-	A=singlerandomnumber;	
-
-
-	for (r=0; r< size; r++)
-	{
-		singlerandomnumber = 0.001 * (float)*(allrandomnumber + 5 + r);
-		a = singlerandomnumber;
-		singlerandomnumber = 0.001 * (float)*(allrandomnumber + 5 + r + size);
-		alpha = 3.141592653 * 2 * singlerandomnumber;
-		*(chain->spins+(r*3)  )=beginningx(q, a, alpha, A, r);
-		*(chain->spins+(r*3)+1)=beginningy(q, a, alpha, A, r);
-		*(chain->spins+(r*3)+2)=beginningz(q, a, alpha, A, r);
-		singlerandomnumber = 0.001 * (float)*(allrandomnumber + 5 + r + (2* size));
-		*(chain->randomzcoupling+r)=((2*singlerandomnumber)-1)*zcouplingmax;
-	}
-	chain->timestep = timestep;
-	chain->J = J;
-	chain->Delta = Delta;
-	chain->time = 0.0;
-	chain->q = q;
-	chain->id = *id;
-	chain->max_randomzcoupling = zcouplingmax;
-
-	printf("hier kommt size  %d \n", size);
-	printf("hier kommt q     %f \n", q);
-	printf("hier kommt J     %f \n", J);
-	printf("hier kommt A     %f \n", A);
-	printf("hier kommt alpha %f \n", alpha);
-	printf("hier kommt id    %d \n", *id);
-	printf("hier kommt Delta %f \n", chain->Delta);
-	
-	free(allrandomnumber);
-	return chain;
-}
-
-
-
-
-
-/* Create a 3dim spin chain with randomdata:
- * TODO: remove alhpa before forschleife, work on A
- *       work on printfs
- */
-struct spinchain *create_spinchain2(int size, float timestep, float J, float Delta, int qnumber, int *id, float zcouplingmax)
+struct spinchain *create_spinchain(int size, float timestep, float J, float Delta, int qnumber, int *id, float zcouplingmax)
 {
 	float a, A, alpha, singlerandomnumber, cosqr;
 	int r;
@@ -493,9 +411,9 @@ struct spinchain *create_spinchain2(int size, float timestep, float J, float Del
 		a = singlerandomnumber;
 		singlerandomnumber = 0.001 * (float)*(allrandomnumber + 5 + r + size);
 		alpha = 3.141592653 * 2 * singlerandomnumber;
-		*(chain->spins+(r*3)  )=beginningx2(cosqr, a, alpha, A, r);
-		*(chain->spins+(r*3)+1)=beginningy2(cosqr, a, alpha, A, r);
-		*(chain->spins+(r*3)+2)=beginningz2(cosqr, a, alpha, A, r);
+		*(chain->spins+(r*3)  )=beginningx(cosqr, a, alpha, A, r);
+		*(chain->spins+(r*3)+1)=beginningy(cosqr, a, alpha, A, r);
+		*(chain->spins+(r*3)+2)=beginningz(cosqr, a, alpha, A, r);
 		singlerandomnumber = 0.001 * (float)*(allrandomnumber + 5 + r + (2* size));
 		*(chain->randomzcoupling+r)=((2*singlerandomnumber)-1)*zcouplingmax;
 	}
@@ -508,13 +426,13 @@ struct spinchain *create_spinchain2(int size, float timestep, float J, float Del
 	chain->id = *id;
 	chain->max_randomzcoupling = zcouplingmax;
 
-	//printf("hier kommt size    %d \n", size);
-	//printf("hier kommt qnumber %d \n", qnumber);
-	//printf("hier kommt J       %f \n", J);
-	//printf("hier kommt A       %f \n", A);
-	//printf("hier kommt alpha   %f \n", alpha);
-	//printf("hier kommt id      %d \n", *id);
-	//printf("hier kommt Delta   %f \n", chain->Delta);
+	printf("hier kommt size    %d \n", size);
+	printf("hier kommt qnumber %d \n", qnumber);
+	printf("hier kommt J       %f \n", J);
+	printf("hier kommt A       %f \n", A);
+	printf("hier kommt alpha   %f \n", alpha);
+	printf("hier kommt id      %d \n", *id);
+	printf("hier kommt Delta   %f \n", chain->Delta);
 	
 	free(allrandomnumber);
 	return chain;
@@ -556,47 +474,25 @@ void free_spinchain(struct spinchain *chain)
 }
 
 
-/* Calculate timederivation 
- * x = S^x_r     y = S^y_r     z = S^z_r
- * x2= S^x_r-1   y2= S^y_r-1
- * x3= S^x_r+1   
- */
-float timedex(float y, float z, float y2, float z2, float y3, float z3, float J, float Delta, float zcoupling)
-{
-	return J * (         z * ( y2 + y3)  -  Delta * y * (z2 + z3) + y * zcoupling);
-} 
-
-
-float timedey(float x, float z, float x2, float z2, float x3, float z3, float J, float Delta, float zcoupling)
-{
-	return J * ( Delta * x * (z2 + z3) -            z * (x2 + x3) - x * zcoupling );
-}
-
-
-float timedez(float x, float y, float x2, float y2, float x3, float y3, float J, float Delta)
-{
-	return J * (         y * (x2 + x3)   -          x * (y2 + y3) );
-}
-
 
 
 /* To start we need a Anfangsverteilung
  * We need 3 random numbers A, a, alpha and momentum of the system
  * cos alpha * sqrt(1-A^2cos^2(qr) a^2)
  */
-float beginningx2(float cosqr, float  a, float  alpha, float A, int r)
+float beginningx(float cosqr, float  a, float  alpha, float A, int r)
 {
 	return cos(alpha) * sqrtf(1 - powf(beginningz( cosqr, a, alpha, A, r),2.0f));
 }
 
 
-float beginningy2(float cosqr, float  a, float  alpha, float A, int r)
+float beginningy(float cosqr, float  a, float  alpha, float A, int r)
 {
 	return sin(alpha) * sqrtf(1 - powf(beginningz( cosqr, a, alpha, A, r),2.0f));
 }
 
 
-float beginningz2(float cosqr, float  a, float  alpha, float A, int r)
+float beginningz(float cosqr, float  a, float  alpha, float A, int r)
 {
 	return  A * cosqr * a;
 }

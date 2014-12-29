@@ -43,7 +43,7 @@ void *calculate_spinchain(void *id)
 {
 	int i;
 	struct spinchain *chain;
-	chain = (struct spinchain *)create_spinchain2(size, timestep, J, Delta, qnumber, (int*)id, zcouplingmax);
+	chain = (struct spinchain *)create_spinchain(size, timestep, J, Delta, qnumber, (int*)id, zcouplingmax);
 	if(chain != NULL){
 		//print_chain(chain);
 		//printmode_chain(chain, &q);
