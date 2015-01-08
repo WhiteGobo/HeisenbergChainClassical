@@ -6,19 +6,19 @@
 #include <errno.h>
 #include "timechain/timechain.h"
 
-static float pi = 3.141592653;
+static double pi = 3.141592653;
 
 
 int size = 18000;
-float timestep = 0.01;
-float J = -1.0;
-float Delta = 1.5;
+double timestep = 0.01;
+double J = -1.0;
+double Delta = 1.5;
 int timemax;
 int k = 1000;
 //int MaxId = 1000;
 int MaxId = 10;
-float zcouplingmax = 0.0;
-float q;
+double zcouplingmax = 0.0;
+double q;
 int qnumber;
 int runningThreads = 0;
 pthread_mutex_t lock_runningThreads;

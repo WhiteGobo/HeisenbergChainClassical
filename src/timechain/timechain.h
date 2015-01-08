@@ -1,34 +1,34 @@
 struct spinchain {
-	float *spins;
-	float *spinssecond;
-	float *randomzcoupling;
+	double *spins;
+	double *spinssecond;
+	double *randomzcoupling;
 	int size;
-	float timestep;
-	float time;
-	float J; //dipolecoupling constant
-	float Delta; //Inhomogenity
+	double timestep;
+	double time;
+	double J; //dipolecoupling constant
+	double Delta; //Inhomogenity
 	int id;
 	struct inhalt *plotter;
-	float qanalysis;
-	float q;
+	double qanalysis;
+	double q;
 	int qnumber;
-	float max_randomzcoupling;
+	double max_randomzcoupling;
 };
 
 void progress_rk(struct spinchain *chain);
 void progress_eul(struct spinchain *chain);
 void print_chain(struct spinchain *chain);
-void printmode_chain(struct spinchain *chain, float *q);
-void plotmodebegin_chain(struct spinchain *chain, float q);
+void printmode_chain(struct spinchain *chain, double *q);
+void plotmodebegin_chain(struct spinchain *chain, double q);
 void printforce_chain(struct spinchain *chain);
-struct spinchain *create_spinchain(int size, float timestep, float J, float Delta, int qnumber, int *id, float zcouplingmax);
+struct spinchain *create_spinchain(int size, double timestep, double J, double Delta, int qnumber, int *id, double zcouplingmax);
 void free_spinchain(struct spinchain *chain);
-float beginningx(float cosqr, float  a, float  alpha, float A, int r);
-float beginningy(float cosqr, float  a, float  alpha, float A, int r);
-float beginningz(float cosqr, float  a, float  alpha, float A, int r);
-float timedex(float y, float z, float y2, float z2, float y3, float z3, float J, float Delta, float zcoupling);
-float timedey(float x, float z, float x2, float z2, float x3, float z3, float J, float Delta, float zcoupling);
-float timedez(float x, float y, float x2, float y2, float x3, float y3, float J, float Delta);
-void plotmode_chain(struct spinchain *chain, float qanalysis);
+double beginningx(double cosqr, double  a, double  alpha, double A, int r);
+double beginningy(double cosqr, double  a, double  alpha, double A, int r);
+double beginningz(double cosqr, double  a, double  alpha, double A, int r);
+double timedex(double y, double z, double y2, double z2, double y3, double z3, double J, double Delta, double zcoupling);
+double timedey(double x, double z, double x2, double z2, double x3, double z3, double J, double Delta, double zcoupling);
+double timedez(double x, double y, double x2, double y2, double x3, double y3, double J, double Delta);
+void plotmode_chain(struct spinchain *chain, double qanalysis);
 void plotmodecycle_chain(struct spinchain *chain);
 void plotmodeend_chain(struct spinchain *chain);

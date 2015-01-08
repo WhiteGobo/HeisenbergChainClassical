@@ -4,40 +4,40 @@
 #include "../reader/reader.h"
 #include "../plotter/plotter.h"
 
-static float pi = 3.141592653;
+static double pi = 3.141592653;
 
 struct spinchain {
-	float *spins;
-	float *spinssecond;
-	float *randomzcoupling;
+	double *spins;
+	double *spinssecond;
+	double *randomzcoupling;
 	int size;
-	float timestep;
-	float time;
-	float J; //dipolecoupling constant
-	float Delta; //Inhomogenity
+	double timestep;
+	double time;
+	double J; //dipolecoupling constant
+	double Delta; //Inhomogenity
 	int id;
 	struct inhalt *plotter;
-	float qanalysis;
-	float q;
+	double qanalysis;
+	double q;
 	int qnumber;
-	float max_randomzcoupling;
+	double max_randomzcoupling;
 };
 
 void progress_rk(struct spinchain *chain);
 void progress_eul(struct spinchain *chain);
 void print_chain(struct spinchain *chain);
-void printmode_chain(struct spinchain *chain, float *q);
-void plotmodebegin_chain(struct spinchain *chain, float q);
+void printmode_chain(struct spinchain *chain, double *q);
+void plotmodebegin_chain(struct spinchain *chain, double q);
 void printforce_chain(struct spinchain *chain);
-struct spinchain *create_spinchain(int size, float timestep, float J, float Delta, int qnumber, int *id, float zcouplingmax);
+struct spinchain *create_spinchain(int size, double timestep, double J, double Delta, int qnumber, int *id, double zcouplingmax);
 void free_spinchain(struct spinchain *chain);
-float beginningx(float cosqr, float  a, float  alpha, float A, int r);
-float beginningy(float cosqr, float  a, float  alpha, float A, int r);
-float beginningz(float cosqr, float  a, float  alpha, float A, int r);
-float timedex(float y, float z, float y2, float z2, float y3, float z3, float J, float Delta, float zcoupling);
-float timedey(float x, float z, float x2, float z2, float x3, float z3, float J, float Delta, float zcoupling);
-float timedez(float x, float y, float x2, float y2, float x3, float y3, float J, float Delta);
-void plotmode_chain(struct spinchain *chain, float qanalysis);
+double beginningx(double cosqr, double  a, double  alpha, double A, int r);
+double beginningy(double cosqr, double  a, double  alpha, double A, int r);
+double beginningz(double cosqr, double  a, double  alpha, double A, int r);
+double timedex(double y, double z, double y2, double z2, double y3, double z3, double J, double Delta, double zcoupling);
+double timedey(double x, double z, double x2, double z2, double x3, double z3, double J, double Delta, double zcoupling);
+double timedez(double x, double y, double x2, double y2, double x3, double y3, double J, double Delta);
+void plotmode_chain(struct spinchain *chain, double qanalysis);
 void plotmodecycle_chain(struct spinchain *chain);
 void plotmodeend_chain(struct spinchain *chain);
 
@@ -53,10 +53,10 @@ void plotmodeend_chain(struct spinchain *chain);
 void progress_rk(struct spinchain *chain)
 {
 	int i;
-	float sigma[9];
-	float erg[chain->size * 3];
-	float x,y,z,xm,ym,zm,xp,yp,zp,J,Delta, h, zcoupling;
-	float spinlaenge;
+	double sigma[9];
+	double erg[chain->size * 3];
+	double x,y,z,xm,ym,zm,xp,yp,zp,J,Delta, h, zcoupling;
+	double spinlaenge;
 
 	J=chain->J;
 	Delta=chain->Delta;
@@ -171,7 +171,7 @@ void progress_rk(struct spinchain *chain)
 	*(chain->spinssecond+chain->size*3-2) = erg[chain->size*3-2] / spinlaenge;
 	*(chain->spinssecond+chain->size*3-1) = erg[chain->size*3-1] / spinlaenge;
 
-	float *spinhelp = chain->spins;
+	double *spinhelp = chain->spins;
 	chain->spins = chain->spinssecond;
 	chain->spinssecond = spinhelp;
 }
@@ -189,8 +189,8 @@ void progress_rk(struct spinchain *chain)
 void progress_eul(struct spinchain *chain)
 {
 	int i;
-	float erg[chain->size * 3];
-	float x,y,z,x2,y2,z2,x3,y3,z3,J,Delta, h, zcoupling;
+	double erg[chain->size * 3];
+	double x,y,z,x2,y2,z2,x3,y3,z3,J,Delta, h, zcoupling;
 
 	J=chain->J;
 	Delta=chain->Delta;
@@ -245,7 +245,7 @@ void progress_eul(struct spinchain *chain)
 	erg[chain->size*3-2]=*(chain->spins+i*3+1) + h*timedey(x,z,x2,z2,x3,z3,J,Delta,zcoupling);
 	erg[chain->size*3-1]=*(chain->spins+i*3+2) + h*timedez(x,y,x2,y2,x3,y3,J,Delta);
 	
-	float *spin = chain->spins;
+	double *spin = chain->spins;
 	//now lets copy our list
 	for (i=0; i<chain->size*3; i++)
 	{
@@ -258,7 +258,7 @@ void progress_eul(struct spinchain *chain)
 void print_chain(struct spinchain *chain)
 {
 	int r;
-	float *spin = chain->spins;
+	double *spin = chain->spins;
 	printf("Richtung der Spins: \n");
 	for (r=0; r<chain->size; r++)
 	{
@@ -287,11 +287,11 @@ void plot_chain(struct spinchain *chain)
 
 /* analyse q_z-mode (fourier analysis)
  */
-void printmode_chain(struct spinchain *chain, float *q)
+void printmode_chain(struct spinchain *chain, double *q)
 {
-	float sum = 0.0;
+	double sum = 0.0;
 	int r;
-	float *spin = chain->spins + 2;
+	double *spin = chain->spins + 2;
 	for (r=0; r< chain->size; r++)
 	{
 		sum= sum + (cosf((*q)*r))* (*spin);
@@ -305,7 +305,7 @@ void printmode_chain(struct spinchain *chain, float *q)
 /* create a plotter device for continuus plotting
  * uses plotmodecycle and plotmodeend
  */
-void plotmode_chain(struct spinchain *chain, float qanalysis)
+void plotmode_chain(struct spinchain *chain, double qanalysis)
 {
 	struct inhalt *data;
 	char name[255];
@@ -324,12 +324,12 @@ void plotmode_chain(struct spinchain *chain, float qanalysis)
 
 void plotmodecycle_chain(struct spinchain *chain)
 {
-	float qmode = 0.0;
+	double qmode = 0.0;
 	int r;
-	float *spin = chain->spins + 2;
+	double *spin = chain->spins + 2;
 	for (r=0; r< chain->size; r++)
 	{
-		qmode= qmode + cosf((float)(2*pi*r%(chain->qnumber) / chain->qnumber))* (*spin);
+		qmode= qmode + cosf((double)(2*pi*r%(chain->qnumber) / chain->qnumber))* (*spin);
 		spin= spin+3;
 	}
 	cycle_plotter(chain->plotter, &(chain->time), &(qmode));
@@ -346,9 +346,9 @@ void plotmodeend_chain(struct spinchain *chain)
  */
 void printforce_chain(struct spinchain *chain)
 {
-	float sum = 0.0;
+	double sum = 0.0;
 	int r;
-	float *spin = chain->spins;
+	double *spin = chain->spins;
 	for (r=0; r< chain->size; r++)
 	{
 		sum+= (*spin)*(*spin) + *(spin+1)* *(spin+1) + *(spin+2)* *(spin+2);
@@ -365,9 +365,9 @@ void printforce_chain(struct spinchain *chain)
  * TODO: remove alpha before forschleife, work on A
  *       work on printfs
  */
-struct spinchain *create_spinchain(int size, float timestep, float J, float Delta, int qnumber, int *id, float zcouplingmax)
+struct spinchain *create_spinchain(int size, double timestep, double J, double Delta, int qnumber, int *id, double zcouplingmax)
 {
-	float a, A, alpha, singlerandomnumber, cosqr;
+	double a, A, alpha, singlerandomnumber, cosqr;
 	int r;
 	struct spinchain *chain = malloc(sizeof(struct spinchain));
 	char name[30];
@@ -395,10 +395,10 @@ struct spinchain *create_spinchain(int size, float timestep, float J, float Delt
 		return NULL;
 	}
 
-	//singlerandomnumber = 0.001 * (float)*(allrandomnumber );
-	//float alpha=singlerandomnumber*2*3.141592653;	
+	//singlerandomnumber = 0.001 * (double)*(allrandomnumber );
+	//double alpha=singlerandomnumber*2*3.141592653;	
 
-	//singlerandomnumber = 0.001 * (float)*(allrandomnumber + 1);
+	//singlerandomnumber = 0.001 * (double)*(allrandomnumber + 1);
 	singlerandomnumber = 0.25;
 	A=singlerandomnumber;	
 
@@ -407,14 +407,14 @@ struct spinchain *create_spinchain(int size, float timestep, float J, float Delt
 	{
 		cosqr = cos(2 * pi * (r % qnumber) / qnumber);
 
-		singlerandomnumber = 0.001 * (float)*(allrandomnumber + 5 + r);
+		singlerandomnumber = 0.001 * (double)*(allrandomnumber + 5 + r);
 		a = singlerandomnumber;
-		singlerandomnumber = 0.001 * (float)*(allrandomnumber + 5 + r + size);
+		singlerandomnumber = 0.001 * (double)*(allrandomnumber + 5 + r + size);
 		alpha = 3.141592653 * 2 * singlerandomnumber;
 		*(chain->spins+(r*3)  )=beginningx(cosqr, a, alpha, A, r);
 		*(chain->spins+(r*3)+1)=beginningy(cosqr, a, alpha, A, r);
 		*(chain->spins+(r*3)+2)=beginningz(cosqr, a, alpha, A, r);
-		singlerandomnumber = 0.001 * (float)*(allrandomnumber + 5 + r + (2* size));
+		singlerandomnumber = 0.001 * (double)*(allrandomnumber + 5 + r + (2* size));
 		*(chain->randomzcoupling+r)=((2*singlerandomnumber)-1)*zcouplingmax;
 	}
 	chain->timestep = timestep;
@@ -482,19 +482,19 @@ void free_spinchain(struct spinchain *chain)
  * x2= S^x_r-1   y2= S^y_r-1
  * x3= S^x_r+1   
  */
-float timedex(float y, float z, float y2, float z2, float y3, float z3, float J, float Delta, float zcoupling)
+double timedex(double y, double z, double y2, double z2, double y3, double z3, double J, double Delta, double zcoupling)
 {
 	return J * (        z * ( y2 + y3)  -  Delta * y * (z2 + z3) + y * zcoupling);
 } 
 
 
-float timedey(float x, float z, float x2, float z2, float x3, float z3, float J, float Delta, float zcoupling)
+double timedey(double x, double z, double x2, double z2, double x3, double z3, double J, double Delta, double zcoupling)
 {
 	return J * ( Delta * x * (z2 + z3) -            z * (x2 + x3) - x * zcoupling );
 }
 
 
-float timedez(float x, float y, float x2, float y2, float x3, float y3, float J, float Delta)
+double timedez(double x, double y, double x2, double y2, double x3, double y3, double J, double Delta)
 {
 	return J * (         y * (x2 + x3)   -          x * (y2 + y3) );
 }
@@ -505,19 +505,19 @@ float timedez(float x, float y, float x2, float y2, float x3, float y3, float J,
  * We need 3 random numbers A, a, alpha and momentum of the system
  * cos alpha * sqrt(1-A^2cos^2(qr) a^2)
  */
-float beginningx(float cosqr, float  a, float  alpha, float A, int r)
+double beginningx(double cosqr, double  a, double  alpha, double A, int r)
 {
 	return cos(alpha) * sqrtf(1 - powf(beginningz( cosqr, a, alpha, A, r),2.0f));
 }
 
 
-float beginningy(float cosqr, float  a, float  alpha, float A, int r)
+double beginningy(double cosqr, double  a, double  alpha, double A, int r)
 {
 	return sin(alpha) * sqrtf(1 - powf(beginningz( cosqr, a, alpha, A, r),2.0f));
 }
 
 
-float beginningz(float cosqr, float  a, float  alpha, float A, int r)
+double beginningz(double cosqr, double  a, double  alpha, double A, int r)
 {
 	return  A * cosqr * a;
 }

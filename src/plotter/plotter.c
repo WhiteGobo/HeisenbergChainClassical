@@ -4,7 +4,7 @@
 
 struct inhalt {
 	FILE *save;
-	float *numbers;
+	double *numbers;
 	int columns;
 	int rows;
 };
@@ -17,10 +17,10 @@ void close(struct inhalt *data);
 int sizeofinhalt(void);
 struct inhalt *init_inhalt(void);
 void close_inhalt(struct inhalt *data);
-void ins_numbers(struct inhalt *data, float *numbers, int columns, int rows);
-void copy_numbers(struct inhalt *data, float *numbers, int columns, int rows);
+void ins_numbers(struct inhalt *data, double *numbers, int columns, int rows);
+void copy_numbers(struct inhalt *data, double *numbers, int columns, int rows);
 struct inhalt *init_plotter(char *name, char *headerstring);
-void cycle_plotter(struct inhalt *data, float *xnumber, float *ynumber);
+void cycle_plotter(struct inhalt *data, double *xnumber, double *ynumber);
 void close_plotter(struct inhalt *data);
 
 
@@ -41,7 +41,7 @@ void close_inhalt(struct inhalt *data)
 
 /* use this to insert the rows and columns
  */
-void ins_numbers(struct inhalt *data, float *numbers, int columns, int rows)
+void ins_numbers(struct inhalt *data, double *numbers, int columns, int rows)
 {
 	data->numbers = numbers;
 	data->columns = columns;
@@ -53,7 +53,7 @@ void ins_numbers(struct inhalt *data, float *numbers, int columns, int rows)
  * TODO: write this method make clear that within malloc one free the 
  * 	space at end of the program
  */
-void copy_numbers(struct inhalt *data, float *numbers, int columns, int rows)
+void copy_numbers(struct inhalt *data, double *numbers, int columns, int rows)
 {
 
 }
@@ -87,7 +87,7 @@ void print_header(struct inhalt *data, char *string)
 void print_number(struct inhalt *data)
 {
 	int i, j;
-	float *tip = data->numbers;
+	double *tip = data->numbers;
 	for (i=0; i<data->rows; i++)
 	{
 		for (j=0; j<data->columns; j++)
@@ -138,7 +138,7 @@ struct inhalt *init_plotter(char *name, char *headerstring)
 }
 
 
-void cycle_plotter(struct inhalt *data, float *xnumber, float *ynumber)
+void cycle_plotter(struct inhalt *data, double *xnumber, double *ynumber)
 {
 	fprintf(data->save, "%f\t", *xnumber);
 	fprintf(data->save, "%f\n", *ynumber);
