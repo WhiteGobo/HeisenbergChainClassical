@@ -30,12 +30,12 @@ int waitingtime = 10;
 void request_data (void)
 {
 	scanf("%d", &size);
-	scanf("%f", &timestep);
-	scanf("%f", &Delta);
-	scanf("%f", &J);
+	scanf("%lf", &timestep);
+	scanf("%lf", &Delta);
+	scanf("%lf", &J);
 	scanf("%d", &timemax);
 	scanf("%d", &k);
-	scanf("%f", &zcouplingmax);
+	scanf("%lf", &zcouplingmax);
 }
 
 
